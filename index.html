@@ -1,0 +1,185 @@
+<!DOCTYPE HTML>
+<html>
+<link href='https://fonts.googleapis.com/css?family=Anton' rel='stylesheet'>
+<link href='https://fonts.googleapis.com/css?family=Rubik' rel='stylesheet'>
+<link rel="icon" type="image/x-icon" href="icon.ico">
+
+<style type="text/css">
+    html, body {
+        width: 100%;
+    }
+
+    html {
+        background-color: #0f1923;
+        color: white;
+    }
+
+    body {
+        margin: 0;
+        padding: 0;
+    }
+
+    h1 {
+        margin-top: 0;
+        margin-bottom: 0;
+        font-family: "Anton";
+        color: white;
+        letter-spacing: 2px;
+        font-size: 5rem;
+        font-weight: normal; 
+    }
+
+    h2 {
+        margin-top: 0;
+        font-family: "Rubik";
+        color: white;
+        font-weight: lighter;
+        letter-spacing: 0.5rem;
+    }
+
+    .titles-container {
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+        width: 100%;
+        background-color: #d83946;
+    }
+
+    .titles-container-border {
+        position: relative;
+        width: 100%;
+        top: -0.5rem;
+        height: 0rem;
+        border-bottom: solid 1px #ffffff;
+    }
+
+    .titles {
+        margin-left: 5rem;
+    }
+
+    .agents {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        margin-left: 5rem;
+        margin-top: 3rem;
+    }
+
+    .agent-portrait-container {
+        width: 8.5rem;
+        height: 8.5rem;
+        border: solid 3px #ffffff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .agent-portrait {
+        opacity: 0.6;
+        width: calc(100% - 0.6rem);
+        height: calc(100% - 0.6rem);
+        background-color: #ffffff1c;
+        background-size: contain;
+    }
+
+    .button-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: absolute;
+        bottom: 2rem;
+        right: 2rem;
+        width: 20%;
+        height: 5rem;
+        border: solid 3px #d83946;
+    }
+
+    .randomize-button {
+        width: calc(100% - 0.6rem);
+        height: calc(100% - 0.6rem);
+        border: unset;
+        background-color: #d83946;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: white;
+        font-size: 1.8rem;
+        cursor: pointer;
+        font-family: "Anton";
+        font-weight: lighter;
+        letter-spacing: 0.3rem;
+    }
+</style>
+
+<body>
+    <div class="titles-container">
+        <div class="titles">
+            <h1>Valorant</h1>
+            <h2 id="subtitle">AGENT SELECTION // RANDOMIZED</h2>
+        </div>
+    </div>
+    <div class="titles-container-border"></div>
+    <div class="agents" id="agent-list"></div>
+    <div class="button-container">
+        <button class="randomize-button" onclick="GetRandomAgent();">AGENT ALEATOIRE</button>
+    </div>
+</body>
+
+<script>
+
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
+function GetRandomAgent() {
+    if (agentList == null || agentList.length <= 0)
+        return;
+    selectedAgent = getRandomInt(agentList.length);
+    agentListDiv = document.getElementById('agent-list');
+    
+    index = 0;
+    agentList.forEach(element => {
+        if (index == selectedAgent) {
+            agentListDiv.children[index].children[0].style.backgroundColor = 'rgb(100 255 225 / 65%)';
+            agentListDiv.children[index].children[0].style.opacity = '1';
+            agentListDiv.children[index].style.border = 'solid 3px rgb(100 255 225 / 65%)';
+            document.getElementById('subtitle').innerHTML = 'AGENT SELECTION // RANDOMIZED - ' + agentList[index].displayName.toUpperCase();
+        } else {
+            agentListDiv.children[index].children[0].style.backgroundColor = '#ffffff1c';
+            agentListDiv.children[index].children[0].style.opacity = '0.6';
+            agentListDiv.children[index].style.border = 'solid 3px white';
+        }
+        index++;
+    });
+}
+
+fetch("https://valorant-api.com/v1/agents")
+  .then((response) => response.json())
+  .then((json) => {
+    agentNamesList = [];
+    agentList = [];
+
+    // console.log(json.data);
+    Object.keys(json.data).forEach(index => {
+        if (!agentNamesList.includes(json.data[index].displayName)) {
+            // For some reason, the API returns 2 different sova with different UUIDs
+            agentNamesList.push(json.data[index].displayName);
+            agentList.push(json.data[index]);
+
+            var newAgentContainer = document.createElement('div');
+            newAgentContainer.className = 'agent-portrait-container';
+
+            var newAgentDiv = document.createElement('div');
+            newAgentDiv.className = 'agent-portrait';
+            newAgentDiv.style.backgroundImage = 'url("' + json.data[index].displayIcon + '")';
+
+            document.getElementById('agent-list').appendChild(newAgentContainer);
+            newAgentContainer.appendChild(newAgentDiv);
+      }
+    });
+    GetRandomAgent();
+  });
+</script>
+
+</html>
