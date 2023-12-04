@@ -1,5 +1,8 @@
 <!DOCTYPE HTML>
 <html>
+<head>
+    <title>Random Agent</title>
+</head>
 <link href='https://fonts.googleapis.com/css?family=Anton' rel='stylesheet'>
 <link href='https://fonts.googleapis.com/css?family=Rubik' rel='stylesheet'>
 <link rel="icon" type="image/x-icon" href="icon.ico">
@@ -81,6 +84,10 @@
         height: calc(100% - 0.6rem);
         background-color: #ffffff1c;
         background-size: contain;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
     }
 
     .button-container {
@@ -110,6 +117,13 @@
         font-weight: lighter;
         letter-spacing: 0.3rem;
     }
+
+    .agent-locked {
+        padding-top: 0.2rem;
+        width: 50%;
+        height: 50%;
+        opacity: 0%;
+    }
 </style>
 
 <body>
@@ -128,6 +142,40 @@
 
 <script>
 
+function ClickOnAgent(uuid) {
+    if (agentList == null || agentList.length <= 0)
+        return;
+    agentList.forEach(element => {
+        if (uuid == element.uuid) {
+            if (!element.isLocked) {
+                agentLockedList.push(element.uuid)
+            } else {
+                agentLockedList = agentLockedList.filter(e => { return e != element.uuid });
+            }
+            element.isLocked = !element.isLocked;
+        }
+    });
+    ChangeDisplayLocked();
+    localStorage.setItem('agentLockedList', agentLockedList);
+}
+
+function ChangeDisplayLocked() {
+    if (agentList == null || agentList.length <= 0)
+        return;
+    agentListDiv = document.getElementById('agent-list');
+    
+    index = 0;
+    agentList.forEach(element => {
+        if (agentLockedList.includes(element.uuid))
+            element.isLocked = true;
+        if (element.isLocked)
+            agentListDiv.children[index].children[0].children[0].style.opacity = '100%';
+        else
+            agentListDiv.children[index].children[0].children[0].style.opacity = '0%';
+        index++;
+    });
+}
+
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
@@ -135,12 +183,13 @@ function getRandomInt(max) {
 function GetRandomAgent() {
     if (agentList == null || agentList.length <= 0)
         return;
-    selectedAgent = getRandomInt(agentList.length);
+    selectedAgent = getRandomInt(agentList.filter(element => { return !element.isLocked }).length);
     agentListDiv = document.getElementById('agent-list');
     
     index = 0;
+    availableIndex = 0;
     agentList.forEach(element => {
-        if (index == selectedAgent) {
+        if (availableIndex == selectedAgent && !element.isLocked) {
             agentListDiv.children[index].children[0].style.backgroundColor = 'rgb(100 255 225 / 65%)';
             agentListDiv.children[index].children[0].style.opacity = '1';
             agentListDiv.children[index].style.border = 'solid 3px rgb(100 255 225 / 65%)';
@@ -150,9 +199,16 @@ function GetRandomAgent() {
             agentListDiv.children[index].children[0].style.opacity = '0.6';
             agentListDiv.children[index].style.border = 'solid 3px white';
         }
+        if (!element.isLocked)
+            availableIndex++;
         index++;
     });
 }
+
+agentLockedList = [];
+var tempAgentLockedList = localStorage.getItem('agentLockedList');
+if (tempAgentLockedList)
+    agentLockedList = tempAgentLockedList.split(",")
 
 fetch("https://valorant-api.com/v1/agents")
   .then((response) => response.json())
@@ -165,19 +221,29 @@ fetch("https://valorant-api.com/v1/agents")
         if (!agentNamesList.includes(json.data[index].displayName)) {
             // For some reason, the API returns 2 different sova with different UUIDs
             agentNamesList.push(json.data[index].displayName);
+            json.data[index].isLocked = false;
             agentList.push(json.data[index]);
 
             var newAgentContainer = document.createElement('div');
             newAgentContainer.className = 'agent-portrait-container';
+            newAgentContainer.onclick = function() {
+                ClickOnAgent(json.data[index].uuid);
+            };
 
             var newAgentDiv = document.createElement('div');
             newAgentDiv.className = 'agent-portrait';
             newAgentDiv.style.backgroundImage = 'url("' + json.data[index].displayIcon + '")';
 
+            var newLockedIconDiv = document.createElement('img');
+            newLockedIconDiv.src = 'lock.png';
+            newLockedIconDiv.className = 'agent-locked';
+
             document.getElementById('agent-list').appendChild(newAgentContainer);
             newAgentContainer.appendChild(newAgentDiv);
+            newAgentDiv.appendChild(newLockedIconDiv);
       }
     });
+    ChangeDisplayLocked();
     GetRandomAgent();
   });
 </script>
